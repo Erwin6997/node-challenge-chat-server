@@ -5,13 +5,72 @@ const app = express();
 
 app.use(cors())
 //app.use(body.json())
+// new
+const cors = require("cors");
+const MongoClient = require('mongodb').MongoClient;
 
+require("dotenv").config()
+app.use(express.json());
+
+let db_uri = process.env.DB_URI;
+if (!db_uri){
+  console.log("No DB_URI!  Specify it as an environment variable DB_URI (e.g. in .env)")
+  process.exit(1)
+}
+
+let db;
+
+// Initialize connection once
+MongoClient.connect(db_uri, function(err, client) {
+  if(err) throw err;
+  
+  db = client.db("meisamchat");
+  // Start the application after the database connection is ready
+  app.listen(3000);
+  console.log("Listening on port 3000");
+});
+
+//
 const welcomeMessage = {
   id: 0,
   from: "Bart",
   text: "Welcome to CYF chat system!",
 };
 app.use(express.json());
+
+//new
+
+
+app.get("/" , (req, res) => {
+  res.send("hello");
+})
+app.get("/messages" , (req, res) =>{
+  console.log(messages);
+  if(!messages) {
+    res.sendStatus(404);
+  }else {
+  res.send(messages);
+  }
+
+})
+
+app.post("/messages" , (req, res) =>{
+let collection = db.collection("messages");
+  console.log(req.body);
+  console.log("body");
+  messages.push(req.body);
+
+ collection.insertOne(req.body, function (error, result ){
+   if (error){
+     console.log(error);
+     res.status(500).send(error);
+   } else {
+     res.status(200).send(result.ops[0])
+   }
+ })
+})
+
+//
 //This array is our "data store".
 //We will start with one message in the array.
 //Note: messages will be lost when Glitch restarts our server.
