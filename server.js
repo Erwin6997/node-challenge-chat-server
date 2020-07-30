@@ -1,5 +1,6 @@
 const express = require("express")
 const app = express();
+const mongodb = require('mongodb');
 const cors = require("cors");
 const MongoClient = require('mongodb').MongoClient;
 const port = process.env.PORT || 3000;
@@ -26,20 +27,16 @@ MongoClient.connect(db_uri, function(err, client) {
 });
 
 
-const welcomeMessage = {
-  id: 0,
-  from: "Bart",
-  text: "Welcome to CYF chat system!",
-};
-
-
+// const welcomeMessage = {
+//   id: 0,
+//   from: "Bart",
+//   text: "Welcome to CYF chat system!",
+// };
 
 //This array is our "data store".
 //We will start with one message in the array.
 //Note: messages will be lost when Glitch restarts our server.
-const messages = [welcomeMessage];
-
-
+//const messages = [welcomeMessage];
 
 //new
 app.get("/", function (req, res) {
@@ -47,68 +44,94 @@ app.get("/", function (req, res) {
 });
 
 app.get("/messages" , (req, res) =>{
-  console.log(messages);
-  if(!messages) {
-    res.sendStatus(404);
-  }else {
-  res.send(messages);
-  }
-
-})
+  let collection = db.collection("messages");
+  const all = {}
+  collection.find(all).toArray(function(error, result) {
+    if(error){
+      res.status(500).send(error);
+        }else if (result) {
+          res.status(200).send(result);
+        } else {
+          res.sendStatus(404)
+        }
+  });
+});
 
 app.post("/messages/add" , (req, res) =>{
 let collection = db.collection("messages");
   console.log(req.body);
-  console.log("body");
-  messages.push(req.body);
+  //messages.push(req.body);
 
   collection.insertOne(req.body, function (error, result ){
-    if (error){
-      console.log(error);
-      res.status(500).send(error);
-    } else {
-      res.status(200).send(result.ops[0])
+    if(error){
+      res.status(400).send(error);
+      }else if (result){
+          res.status(200).send(result.ops[0]);
+      }else {
+          res.sendStatus(404);
     }
-  })
-})
+  });
+});
 
 app.delete("/messages/:id", (req,res)=> {
-  const delMess = { "id" : request.params.id };
+  const delMess = { "id" : req.params.id };
   console.log(delMess);
+  console.log("ID");
   let collection = db.collection("messages");
   collection.deleteOne(delMess , function (error, result ){
-    if (error){
-      console.log(error);
-      res.status(500).send(error);
-    } else {
-      res.status(200).send(result.ops[0])
-    }
+    if(error){
+      res.status(400).send(error);
+      console.log("Error", error);
+        }else if (req.result) {
+          res.status(204).send('Delete one film');
+        } else {
+          res.sendStatus(404)
+        }
   })
 })
 
 app.get("/search?", (req, res)=> {
-  const searchTerm = req.query.term
-  const searchedMess = messages.find(mess => mess.from.toLowerCase().includes(searchTerm.toLowerCase()) || mess.text.toLowerCase().includes(searchTerm.toLowerCase()))
-    !searchedMess? res.sendStatus(404) : res.send(searchedMess)
+  let collection = db.collection("messages");
+  if (mongodb.ObjectID.isValid(req.params.id)){
+    res.status(404).send("The Id is not Valid!");
+  }else{
+    const searchObject = { "_id" : new mongodb.ObjectID(req.params.id) };
+    console.log(searchObject);
+    
+    collection.find(searchObject).toArray(function(error, result) {
+      console.log(result)
+      console.log("xxx");
+      if(error){
+        res.status(500).send(error);
+      }else if (result) {
+        res.status(200).send(result);
+      } else {
+        res.sendStatus(404)
+      }
+    });
+  }
 })
 
 app.put("/update/:id", (req, res)=> {
-  const reqId = Number(req.params.id)
-  
-  let message = messages.find(mess => mess.id === reqId)
-  const index = messages.indexOf(message)
- 
-  if(message) {
-    let messUpdate = {
-      id: message.id,
-      from: req.body.from,
-      text: req.body.text,
-      timeSent: message.timeSent
-    }
-    messages.splice(index, 1, messUpdate)
-    res.json(message)
-  } else {
-    res.sendStatus(400)
-  }
-
-})
+  const searchObject = { "_id" : req.params.id };
+    console.log(searchObject);
+    let collection = db.collection("messages");
+    collection.find(searchObject).toArray(function(error, result) {
+      res.send(error || result);
+      const update = {
+        $set: {
+          text
+        },
+      };
+    collection.findOneAndUpdate(searchObject , update ,function (error, result) {
+      if(error){
+        req.status(400).send(error);
+          }else if (req.result) {
+            req.sendStatus(204)
+          } else {
+            req.sendStatus(404)
+          }
+          res.send('Update one film');
+      });
+    });
+});
