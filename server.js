@@ -2,7 +2,7 @@ const express = require("express")
 const app = express();
 const cors = require("cors");
 const MongoClient = require('mongodb').MongoClient;
-
+const port = process.env.PORT || 3000;
 require("dotenv").config()
 app.use(express.json());
 
@@ -20,8 +20,9 @@ MongoClient.connect(db_uri, function(err, client) {
   
   db = client.db("meisamchat");
   // Start the application after the database connection is ready
-  app.listen(3000);
-  console.log("Listening on port 3000");
+  app.listen(port || 3000, function() {
+    console.log(`Running at \`http://localhost:${port}\`...`)
+  })
 });
 
 
@@ -41,9 +42,10 @@ const messages = [welcomeMessage];
 
 
 //new
-app.get("/" , (req, res) => {
-  res.send("hello");
-})
+app.get("/", function (req, res) {
+  res.sendFile(__dirname + "/index.html");
+});
+
 app.get("/messages" , (req, res) =>{
   console.log(messages);
   if(!messages) {
@@ -54,7 +56,7 @@ app.get("/messages" , (req, res) =>{
 
 })
 
-app.post("/messages" , (req, res) =>{
+app.post("/messages/add" , (req, res) =>{
 let collection = db.collection("messages");
   console.log(req.body);
   console.log("body");
@@ -70,27 +72,18 @@ let collection = db.collection("messages");
   })
 })
 
-
-app.get("/", function (req, res) {
-  res.sendFile(__dirname + "/index.html");
-});
-
-app.get("/messages" , function (req, res ) {
-  res.send(messages);
-})
-
-app.post("/messages/add", (req, res) => {
-
-  messages.push(req.body);
-  console.log("ADD NEW message:", req.body);
-  res.json({ Success: true });
-});
-
 app.delete("/messages/:id", (req,res)=> {
-  const delMess = Number(req.params.id)
+  const delMess = { "id" : request.params.id };
   console.log(delMess);
-  messages = messages.filter(mess=>mess.id !== delMess)
-  res.send(messages)
+  let collection = db.collection("messages");
+  collection.deleteOne(delMess , function (error, result ){
+    if (error){
+      console.log(error);
+      res.status(500).send(error);
+    } else {
+      res.status(200).send(result.ops[0])
+    }
+  })
 })
 
 app.get("/search?", (req, res)=> {
