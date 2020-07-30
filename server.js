@@ -1,11 +1,5 @@
-const express = require("express");
-const cors = require("cors");
-//const bodyParser = require("body-parser");
+const express = require("express")
 const app = express();
-
-app.use(cors())
-//app.use(body.json())
-// new
 const cors = require("cors");
 const MongoClient = require('mongodb').MongoClient;
 
@@ -30,17 +24,23 @@ MongoClient.connect(db_uri, function(err, client) {
   console.log("Listening on port 3000");
 });
 
-//
+
 const welcomeMessage = {
   id: 0,
   from: "Bart",
   text: "Welcome to CYF chat system!",
 };
-app.use(express.json());
+
+
+
+//This array is our "data store".
+//We will start with one message in the array.
+//Note: messages will be lost when Glitch restarts our server.
+const messages = [welcomeMessage];
+
+
 
 //new
-
-
 app.get("/" , (req, res) => {
   res.send("hello");
 })
@@ -60,21 +60,16 @@ let collection = db.collection("messages");
   console.log("body");
   messages.push(req.body);
 
- collection.insertOne(req.body, function (error, result ){
-   if (error){
-     console.log(error);
-     res.status(500).send(error);
-   } else {
-     res.status(200).send(result.ops[0])
-   }
- })
+  collection.insertOne(req.body, function (error, result ){
+    if (error){
+      console.log(error);
+      res.status(500).send(error);
+    } else {
+      res.status(200).send(result.ops[0])
+    }
+  })
 })
 
-//
-//This array is our "data store".
-//We will start with one message in the array.
-//Note: messages will be lost when Glitch restarts our server.
-const messages = [welcomeMessage];
 
 app.get("/", function (req, res) {
   res.sendFile(__dirname + "/index.html");
@@ -124,8 +119,3 @@ app.put("/update/:id", (req, res)=> {
   }
 
 })
-
-const port = process.env.PORT || 3000;
-const listener = app.listen(port, function () {
-  console.log("Your app is listening on port " + listener.address().port);
-});
