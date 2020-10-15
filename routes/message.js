@@ -25,10 +25,25 @@ router.route("/messages/add").post((request, response) => {
     .catch((error) => response.json({ error }));
 });
 // delete message :
-router.route("/messages/:id").post((request, response) => {
+router.route("/messages/del/:id").post((request, response) => {
   Message.deleteOne(request.params.id)
   .then((message) => response.json({ message }))
   .catch((error) => response.json({ error }));
 })
-
+// show 
+router.route("/messages/:id").post((request, response) => {
+  Message.findById(request.params.id)
+  .then((message) => response.json({ message }))
+  .catch((error) => response.json({ error }));
+})
+//edit
+router.route("/messages/edit/:id").post((request, response) => {
+  const editMessage = (request.body);
+  Message.findById(request.params.id)
+  .then((message) => {response.json({ message })
+  message = editMessage;
+  message.save();
+})
+  .catch((error) => response.json({ error }));
+})
 module.exports = router;
